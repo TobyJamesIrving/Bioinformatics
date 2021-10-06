@@ -1,4 +1,4 @@
-#a function to count number of contigs in a bed file
+#a function to count number of contigs in a bedtools coverage file
 contiguo <- function(x, mincov){  #x is a data frame from a .btcoverage file, mincov is minimum coverage depths to include
   gaps <- which(x$V4 < mincov)  #creates a list of all rows with coverage below minimum 
   len <- length(gaps)-1         #breaks otherwise
