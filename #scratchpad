@@ -1,0 +1,46 @@
+#a function to count number of contigs in a bed file
+contiguo <- function(x, mincov){  #x is a data frame from a .btcoverage file, mincov is minimum coverage depths to include
+  gaps <- which(x$V4 < mincov)  #creates a list of all rows with coverage below minimum 
+  len <- length(gaps)-1         #breaks otherwise
+  span <- vector()              #empty vector to store data
+  for(i in 1:len){
+    if(x$V4[gaps[i]+1]>=mincov){  #checks next entry isn't also below coverage threshold, skips until it finds one above
+      a <- gaps[i]+1              #row number for the next row above coverage thresh
+      b <- gaps[i+1]-1            #row number for last row before coverage drops below thresh again
+      D <- x$V3[b]-x$V2[a]        #V3 is end of a stretch of coverage, V2 is the start, V3(end of region)-V2(start of region) = length of region
+      span <-c(span, D)           #adds D onto end of span vector
+          } else {
+                                  #skips when next entry is below coverage threshold    
+          } 
+  }
+return(span)                      #outputs vector, if you don't put it exactly here nothing happens
+}
+
+#create a data frame to hold data, empty and with named columns
+loci <-data.frame(matrix(ncol=9, nrow=0))
+colnames(loci) <- c("name", "min-depth", "n-loci", "min", "1stQ", "median", "mean", "3rdQ", "max")
+
+#a function to run contiguo() using a given .btcoverage file and a specificed minimum depth, then pull out relevant stats
+locistats <- function(btcov, mindepth){
+  contemp <- contiguo(read.table(btcov), mindepth) #runs contiguo with specified parameters
+  tamp <- vector() #empty vector to hold data
+  tamp[1] <- substr(btcov, 1, 9) #pulls first 9 chars from file name, may need altering depending on naming convention
+  tamp[2] <- mindepth  #records the minimum read depth specified
+  tamp[3] <- length(contemp) #number of loci 
+  tamp[4:9] <- as.vector(summary(contemp)) #summary for contemp coerced into a vector
+  return(tamp)
+}
+
+#loop to run through all files with created functions, "files" is a character vector of file names to use
+#value e checks length of data table to ensure next row does not overwrite existing
+#loop then runs locistats for three different minimum coverages and inputs them to a table called "loci"
+for(i in files){
+  e <- length(loci$name)+1
+  loci[e,] <- locistats(i, 1)
+  e <- e+1
+  loci[e,] <- locistats(i, 3)
+  e <- e+1
+  loci[e,] <-locistats(i, 6)
+  e <- e+1
+  loci[e,] <-locistats(i, 8)  
+}
